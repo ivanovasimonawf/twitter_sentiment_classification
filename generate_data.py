@@ -20,10 +20,6 @@ def generate_batches(data, batch_size, max_length, glove_vector_size, twitter_co
             continue
         batch_tensor, labels_tensor, sizes, lens = pack_batch(batch_data, batch_labels, batch_size, glove_vector_size,
                                                         max_length, twitter_corpus, all_categories)
-        # za kaggle start
-        # if batch_tensor == 0 and labels_tensor == 0 and sizes == 0 and lens == 0:
-        #     continue
-        # za kaggle end
         yield [batch_tensor, labels_tensor, sizes, lens]
 
 
@@ -79,10 +75,6 @@ def pack_batch(sequences, labels, batch_size, glove_vector_size, max_length, twi
     labels_ind_for_batch = [all_categories.index(labels[i]) for i in range(len(labels))]
     batch_variable = Variable(batch_tensor)
     labels_variable = Variable(labels_tensor)
-    # za kaggle start
-    # if 0 in sizes:
-    #     return 0, 0, 0, 0
-    # za kaggle end
     return torch.nn.utils.rnn.pack_padded_sequence(batch_variable, sizes,
                                                    batch_first=True), labels_variable, sizes, labels_ind_for_batch
 

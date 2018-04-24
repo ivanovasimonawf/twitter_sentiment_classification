@@ -14,10 +14,7 @@ model_path = "models/model"
 
 epochs = 100
 n_hidden = 128
-output_size = 3
-# za kaggle start
-# output_size = 2
-# za kaggle end
+output_size = 2
 batch_size = 32
 dropout_before_softmax = 0.1
 stacked_rnn = 2

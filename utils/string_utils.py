@@ -22,7 +22,7 @@ def unicode_to_ascii(s):
 
 # separate punctuation connected with a word
 def extract_punctuation(word):
-    punctuations = ". , ; : 's ! n't 'm * ?"
+    punctuations = ". , ; : 's ! n't 'm * ? -"
     for punctuation in punctuations.split(' '):
         if punctuation in word:
             if punctuation == '.':
@@ -31,6 +31,8 @@ def extract_punctuation(word):
                 punctuation = '\*'
             elif punctuation == '?':
                 punctuation = '\?'
+            elif punctuation == '-':
+                punctuation = '\-'
             return list(filter(None, re.split('(' + punctuation + ')', word)))
     return [word]
 
@@ -66,11 +68,6 @@ def tokenize_tweet(input):
 def category_from_output(outputs, all_categories):
     top_n, top_i = outputs.data.topk(1)
     category_i = top_i.view(-1)
-    # print all_categories[category_i]
-    # print(category_i.size(0))
     categories = [all_categories[category_i[i]] for i in range(category_i.size(0)) ]
     category_ind = [category_i[i] for i in range(category_i.size(0))]
     return categories, category_ind
-    # top_n, top_i = output.data.topk(1) # Tensor out of Variable with .data
-    # category_i = top_i[0][0]
-    # return all_categories[category_i], category_i
