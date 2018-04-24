@@ -23,7 +23,7 @@ def generate_batches(data, batch_size, max_length, glove_vector_size, twitter_co
         yield [batch_tensor, labels_tensor, sizes, lens]
 
 
-# pad sentences with zero vectors for words until they reach max_length (TOCNO GI PRAI)
+# pad sentences with zero vectors for words until they reach max_length
 def pad_sequence(sequence, glove_vector_size, max_length, twitter_corpus):
     padded_sequence = np.zeros((max_length, glove_vector_size))
     all_words_for_vecs = list(filter(None, split_sequence(sequence).split(' ')))
