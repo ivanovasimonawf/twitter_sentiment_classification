@@ -73,8 +73,12 @@ def pack_batch(sequences, labels, batch_size, glove_vector_size, max_length, twi
         labels_tensor[ind, :] = torch.LongTensor([all_categories.index(labels[ind])])
 
     labels_ind_for_batch = [all_categories.index(labels[i]) for i in range(len(labels))]
-    batch_variable = Variable(batch_tensor)
-    labels_variable = Variable(labels_tensor)
+    if use_cuda:
+        batch_variable = Variable(batch_tensor.cuda())
+        labels_variable = Variable(labels_tensor.cuda())
+    else:
+        batch_variable = Variable(batch_tensor)
+        labels_variable = Variable(labels_tensor)
     return torch.nn.utils.rnn.pack_padded_sequence(batch_variable, sizes,
                                                    batch_first=True), labels_variable, sizes, labels_ind_for_batch
 

@@ -3,10 +3,8 @@ import torch.nn as nn
 import time
 import datetime
 import math
-from model import RNN
+from model import RNN, use_cuda
 from read_data import *
-from torch import optim
-from torch.autograd import Variable
 from generate_data import generate_batches
 from utils.string_utils import category_from_output
 
@@ -18,12 +16,14 @@ output_size = 2
 batch_size = 32
 dropout_before_softmax = 0.1
 stacked_rnn = 2
-learning_rate = 0.1
+learning_rate = 0.05
 max_length_of_seq = 24
 glove_vector_size = 300  # can be 50, 100, 200, 300
 
 criterion = nn.CrossEntropyLoss()
 rnn = RNN(glove_vector_size, n_hidden, output_size, dropout_before_softmax, stacked_rnn)
+if use_cuda:
+    rnn = rnn.cuda()
 
 print("Arguments used for this: \n epochs = ", epochs, "\n n_hidden: ", n_hidden, "\n batch size: ", batch_size,
       "\n dropout: ", dropout_before_softmax, "\n learning rate: ", learning_rate, "\n max len seq: ", max_length_of_seq,
@@ -46,9 +46,13 @@ def train(output_tensor, input_tensor, seq_sizes):
     # forward one batch and get the last output and hidden state
     output_train, hidden_output = rnn.forward(input_tensor, hidden, seq_sizes, batch_size)
 
+    output_tensor = output_tensor.type(torch.LongTensor).view(-1)
+    output_train = output_train.view(output_train.size(0), output_train.size(2))
+    if use_cuda:
+        output_tensor = output_tensor.cuda()
+
     # get loss of batch (1D)
-    loss_train = criterion(output_train.view(output_train.size(0), output_train.size(2)),
-                           output_tensor.type(torch.LongTensor).view(-1))
+    loss_train = criterion(output_train, output_tensor)
     # add gradients backward
     loss_train.backward()
     # update parameters
@@ -62,8 +66,11 @@ def evaluate(rnn_model, input_tensor, output_tensor, lengths, batch_size):
     hidden = rnn_model.init_hidden(batch_size)
     output, _ = rnn_model.forward(input_tensor, hidden, lengths, batch_size)
 
-    loss_train = criterion(output.view(output.size(0), output.size(2)),
-                           output_tensor.type(torch.LongTensor).view(-1))
+    output_tensor = output_tensor.type(torch.LongTensor).view(-1)
+    output = output.view(output.size(0), output.size(2))
+    if use_cuda:
+        output_tensor = output_tensor.cuda()
+    loss_train = criterion(output, output_tensor)
     return output, loss_train.data[0]
 
 
@@ -76,7 +83,6 @@ all_losses_test = []
 accuracy_test = []
 accuracy_train = []
 
-print_every = 10
 for epoch in range(epochs):
     epoch_loss_train = 0
     correct_predicted_train = 0

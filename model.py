@@ -25,7 +25,10 @@ class RNN(nn.Module):
         output, hidden = self.gru(output, hidden)
         r_out, recovered_lengths = nn.utils.rnn.pad_packed_sequence(output, batch_first=True)  # unpack batch
 
-        chosen_values = Variable(torch.zeros((batch_size, 1, self.hidden_size)))
+        if use_cuda:
+            chosen_values = Variable(torch.zeros((batch_size, 1, self.hidden_size)).cuda())
+        else:
+            chosen_values = Variable(torch.zeros((batch_size, 1, self.hidden_size)))
         ind = 0
         for index in lengths:
             chosen_values[ind, 0, :] = r_out[ind, index-1, :]
