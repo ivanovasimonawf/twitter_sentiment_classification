@@ -36,8 +36,8 @@ class RNN(nn.Module):
         output = self.softmax(output)
         return output, hidden
 
-    def init_hidden(self):
-        result = Variable(torch.zeros(self.stacked_rnn, 1, self.hidden_size))
+    def init_hidden(self, batch_size):
+        result = Variable(torch.zeros(self.stacked_rnn, batch_size, self.hidden_size))
         if use_cuda:
             return result.cuda()
         else:

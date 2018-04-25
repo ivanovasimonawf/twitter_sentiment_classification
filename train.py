@@ -39,7 +39,7 @@ def time_since(since):
 
 
 def train(output_tensor, input_tensor, seq_sizes):
-    hidden = rnn.init_hidden()
+    hidden = rnn.init_hidden(batch_size)
 
     # set all gradients to 0
     rnn.zero_grad()
@@ -59,7 +59,7 @@ def train(output_tensor, input_tensor, seq_sizes):
 
 
 def evaluate(rnn_model, input_tensor, output_tensor, lengths, batch_size):
-    hidden = rnn_model.init_hidden()
+    hidden = rnn_model.init_hidden(batch_size)
     output, _ = rnn_model.forward(input_tensor, hidden, lengths, batch_size)
 
     loss_train = criterion(output.view(output.size(0), output.size(2)),
