@@ -34,11 +34,22 @@ def save_as_tsv(filename):
     dataframe.to_csv('../data/kaggle_data/train.tsv', sep='\t')
 
 
+def avg_words(data):
+    number_of_words = 0
+    for line in data:
+        if len(line) != 2:
+            continue
+        number_of_words += len(line[1].split(' '))
+    return float(number_of_words)/len(data)
+
 lines = open(data_file, encoding='ISO-8859-1').read().strip().split('\n')
 sentiment_tweet_pairs = [[tokenize_tweet(normalize_string(s)).strip() for s in l.split('\t')][-2:] for l in lines][1:]
 
 train_data, test_data = split_data()
 print("Train size: ", len(train_data))
 print("Test size: ", len(test_data))
+print("Average word count train: ", avg_words(train_data))
+print("Average word count test: ", avg_words(test_data))
+
 save_split_data(train_data, train_file)
 save_split_data(test_data, test_file)
