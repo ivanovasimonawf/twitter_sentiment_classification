@@ -22,7 +22,7 @@ def unicode_to_ascii(s):
 
 # separate punctuation connected with a word
 def extract_punctuation(word):
-    punctuations = ". , ; : 's ! n't 'm * ? -"
+    punctuations = ". , ; : 's ! n't 'm * ? - 'll 're 'd 've"
     for punctuation in punctuations.split(' '):
         if punctuation in word:
             if punctuation == '.':
