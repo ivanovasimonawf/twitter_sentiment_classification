@@ -3,6 +3,7 @@ import torch.nn as nn
 import time
 import datetime
 import math
+from torch import optim
 from model import RNN, use_cuda
 from read_data import *
 from generate_data import generate_batches
@@ -10,24 +11,28 @@ from utils.string_utils import category_from_output
 
 model_path = "models/model"
 
-epochs = 100
-n_hidden = 128
+epochs = 300
+n_hidden = 256
 output_size = 2
-batch_size = 32
-dropout_before_softmax = 0.1
+batch_size = 128
+dropout_before_softmax = 0.5
 stacked_rnn = 2
-learning_rate = 0.05
-max_length_of_seq = 24
+learning_rate = 0.0001
+max_length_of_seq = 17
 glove_vector_size = 300  # can be 50, 100, 200, 300
 
 criterion = nn.CrossEntropyLoss()
 rnn = RNN(glove_vector_size, n_hidden, output_size, dropout_before_softmax, stacked_rnn)
+optimizer = optim.Adam(rnn.parameters(), lr=learning_rate)
 if use_cuda:
     rnn = rnn.cuda()
 
-print("Arguments used for this: \n epochs = ", epochs, "\n n_hidden: ", n_hidden, "\n batch size: ", batch_size,
-      "\n dropout: ", dropout_before_softmax, "\n learning rate: ", learning_rate, "\n max len seq: ", max_length_of_seq,
-      "\n glove vector: ", glove_vector_size, "\n stacked rnn: ", stacked_rnn)
+title = "Arguments used for this: epochs = " + str(epochs) + " n_hidden: " + str(n_hidden) + " batch size: " + \
+        str(batch_size) + " dropout: " + str(dropout_before_softmax) + " learning rate: " + str(learning_rate) + \
+        " max len seq: " + str(max_length_of_seq) + " glove vector: " + str(glove_vector_size) + " stacked rnn: " + \
+        str(stacked_rnn)
+
+print(title)
 
 
 def time_since(since):
@@ -38,11 +43,12 @@ def time_since(since):
     return '%dm %ds' % (m, s)
 
 
-def train(output_tensor, input_tensor, seq_sizes):
+def train(output_tensor, input_tensor, seq_sizes, optimizer):
     hidden = rnn.init_hidden(batch_size)
 
     # set all gradients to 0
-    rnn.zero_grad()
+    #rnn.zero_grad()
+    optimizer.zero_grad()
     # forward one batch and get the last output and hidden state
     output_train, hidden_output = rnn.forward(input_tensor, hidden, seq_sizes, batch_size)
 
@@ -56,8 +62,9 @@ def train(output_tensor, input_tensor, seq_sizes):
     # add gradients backward
     loss_train.backward()
     # update parameters
-    for p in rnn.parameters():
-        p.data.sub_(learning_rate, p.grad.data)
+    #for p in rnn.parameters():
+    #    p.data.sub_(learning_rate, p.grad.data)
+    optimizer.step()
 
     return output_train, loss_train.data[0]
 
@@ -83,7 +90,17 @@ all_losses_test = []
 accuracy_test = []
 accuracy_train = []
 
+change_lr_at = 10
+change_lr_with = 0.00001
+
+
 for epoch in range(epochs):
+
+    if epoch == change_lr_at:
+        print("changed lr")
+        learning_rate = change_lr_with
+        optimizer = optim.Adam(rnn.parameters(), lr=learning_rate)
+
     epoch_loss_train = 0
     correct_predicted_train = 0
     data_generator_train = generate_batches(train_data_lines, batch_size, max_length_of_seq, glove_vector_size,
@@ -94,7 +111,7 @@ for epoch in range(epochs):
         full_items += 1
         batch_tweet_tensor, batch_label_tensor, sizes, labels_ind = \
             training_batch[0], training_batch[1], training_batch[2], training_batch[3]
-        output, loss = train(batch_label_tensor, batch_tweet_tensor, sizes)
+        output, loss = train(batch_label_tensor, batch_tweet_tensor, sizes, optimizer)
         # count number of correct predicted sentiments
         predictions, predictions_ind = category_from_output(output, all_categories)
         for i in range(len(predictions_ind)):
@@ -102,11 +119,11 @@ for epoch in range(epochs):
                 correct_predicted_train += 1
         all_losses_train.append(loss)
         epoch_loss_train += loss
-    accuracy_train.append(correct_predicted_train)
-    epoch_losses_train.append(epoch_loss_train)
+    accuracy_train.append(float(correct_predicted_train)/(full_items*batch_size))
+    epoch_losses_train.append(float(epoch_loss_train)/(full_items))
 
     print('Epoch: ', epoch)
-    print("Correct predicted: ", correct_predicted_train)
+    print("Percentage: %.5f" % float("{0:.5f}".format(float(correct_predicted_train)/(full_items*batch_size))))
     print("Loss: ", float(epoch_loss_train))
 
     epoch_loss_test = 0
@@ -125,10 +142,10 @@ for epoch in range(epochs):
         epoch_loss_test += loss
         all_losses_test.append(loss)
     epoch_losses_test.append(epoch_loss_test)
-    accuracy_test.append(correct_predicted_test)
+    accuracy_test.append(float(correct_predicted_test)/(number_of_batches*batch_size))
 
-    print("Correct: ", correct_predicted_test, "out of ", len(test_data_lines))
-    print("Percentage: ", float(correct_predicted_test)/len(test_data_lines))
+    print("Percentage: %.5f" % float("{0:.5f}".format(float(correct_predicted_test)/(number_of_batches*batch_size))))
+    print("Loss: ", epoch_loss_test)
 
 import matplotlib.pyplot as plt
 
@@ -136,11 +153,13 @@ plt.figure()
 plt.plot(epoch_losses_train)
 plt.plot(epoch_losses_test)
 plt.legend(["train", "test"], loc="upper left")
+plt.title(title)
 plt.show()
 
 plt.figure()
 plt.plot(accuracy_test)
 plt.plot(accuracy_train)
 plt.legend(["test", "train"], loc="upper left")
+plt.title(title)
 plt.show()
 torch.save(rnn, model_path + str(datetime.datetime.now()) + ".pt")
