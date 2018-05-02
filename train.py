@@ -11,19 +11,28 @@ from utils.string_utils import category_from_output
 
 model_path = "models/model"
 
-epochs = 300
-n_hidden = 256
+epochs = 100
+n_hidden = 128
 output_size = 2
-batch_size = 128
-dropout_before_softmax = 0.5
+batch_size = 32
+dropout_before_softmax = 0.1
 stacked_rnn = 2
-learning_rate = 0.0001
+learning_rate = 0.1
 max_length_of_seq = 17
 glove_vector_size = 300  # can be 50, 100, 200, 300
+optimizer_type = 'sgd'
 
 criterion = nn.CrossEntropyLoss()
 rnn = RNN(glove_vector_size, n_hidden, output_size, dropout_before_softmax, stacked_rnn)
-optimizer = optim.Adam(rnn.parameters(), lr=learning_rate)
+
+
+def get_optimizer(optim='sgd'):
+    if optim == 'sgd':
+        return optim.SGD(rnn.parameters(), lr=learning_rate)
+    if optim == 'adam':
+        return optim.Adam(rnn.parameters(), lr=learning_rate)
+
+optimizer = get_optimizer(optimizer_type)
 if use_cuda:
     rnn = rnn.cuda()
 
@@ -47,7 +56,6 @@ def train(output_tensor, input_tensor, seq_sizes, optimizer):
     hidden = rnn.init_hidden(batch_size)
 
     # set all gradients to 0
-    #rnn.zero_grad()
     optimizer.zero_grad()
     # forward one batch and get the last output and hidden state
     output_train, hidden_output = rnn.forward(input_tensor, hidden, seq_sizes, batch_size)
@@ -61,9 +69,6 @@ def train(output_tensor, input_tensor, seq_sizes, optimizer):
     loss_train = criterion(output_train, output_tensor)
     # add gradients backward
     loss_train.backward()
-    # update parameters
-    #for p in rnn.parameters():
-    #    p.data.sub_(learning_rate, p.grad.data)
     optimizer.step()
 
     return output_train, loss_train.data[0]
@@ -90,16 +95,7 @@ all_losses_test = []
 accuracy_test = []
 accuracy_train = []
 
-change_lr_at = 10
-change_lr_with = 0.00001
-
-
 for epoch in range(epochs):
-
-    if epoch == change_lr_at:
-        print("changed lr")
-        learning_rate = change_lr_with
-        optimizer = optim.Adam(rnn.parameters(), lr=learning_rate)
 
     epoch_loss_train = 0
     correct_predicted_train = 0
