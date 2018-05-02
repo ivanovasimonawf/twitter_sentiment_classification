@@ -20,9 +20,20 @@ def unicode_to_ascii(s):
     )
 
 
+# remove unnecessary
+def remove_punctuation(sentence):
+    punctuations = ['(', ')', '[', ']', '-', '_', '=', '*']
+    punctuations_not_separated = ["'"]
+    for punctuation in punctuations:
+        sentence = sentence.replace(punctuation, ' ')
+    for punctuation in punctuations_not_separated:
+        sentence = sentence.replace(punctuation, "")
+    return sentence
+
+
 # separate punctuation connected with a word
 def extract_punctuation(word):
-    punctuations = ". , ; : 's ! n't 'm * ? - 'll 're 'd 've"
+    punctuations = ". , ; : 's ! ?"
     for punctuation in punctuations.split(' '):
         if punctuation in word:
             if punctuation == '.':
@@ -31,8 +42,6 @@ def extract_punctuation(word):
                 punctuation = '\*'
             elif punctuation == '?':
                 punctuation = '\?'
-            elif punctuation == '-':
-                punctuation = '\-'
             return list(filter(None, re.split('(' + punctuation + ')', word)))
     return [word]
 
@@ -47,7 +56,7 @@ def split_sequence(sequence):
         for ext in extracted:
             all_words_for_vecs.append(ext)
             new_sequence += ext + " "
-    return new_sequence
+    return remove_punctuation(new_sequence)
 
 
 # replace #word with "hashtag" + word, @name with "user", and urls with "link"
