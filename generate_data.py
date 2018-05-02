@@ -18,9 +18,9 @@ def generate_batches(data, batch_size, max_length, glove_vector_size, twitter_co
         batch_data, batch_labels = separate_data_labels(data[i:i + batch_size])
         if len(batch_labels) < batch_size:
             continue
-        batch_tensor, labels_tensor, sizes, lens = pack_batch(batch_data, batch_labels, batch_size, glove_vector_size,
+        batch_tensor, labels_tensor, sizes, lens, sequences, labels = pack_batch(batch_data, batch_labels, batch_size, glove_vector_size,
                                                         max_length, twitter_corpus, all_categories)
-        yield [batch_tensor, labels_tensor, sizes, lens]
+        yield [batch_tensor, labels_tensor, sizes, lens, sequences, labels]
 
 
 # pad sentences with zero vectors for words until they reach max_length
@@ -80,6 +80,6 @@ def pack_batch(sequences, labels, batch_size, glove_vector_size, max_length, twi
         batch_variable = Variable(batch_tensor)
         labels_variable = Variable(labels_tensor)
     return torch.nn.utils.rnn.pack_padded_sequence(batch_variable, sizes,
-                                                   batch_first=True), labels_variable, sizes, labels_ind_for_batch
+                                                   batch_first=True), labels_variable, sizes, labels_ind_for_batch, sequences, labels
 
 
