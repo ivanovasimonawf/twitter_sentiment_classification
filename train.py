@@ -26,10 +26,10 @@ criterion = nn.CrossEntropyLoss()
 rnn = RNN(glove_vector_size, n_hidden, output_size, dropout_before_softmax, stacked_rnn)
 
 
-def get_optimizer(optim='sgd'):
-    if optim == 'sgd':
+def get_optimizer(optimizer='sgd'):
+    if optimizer == 'sgd':
         return optim.SGD(rnn.parameters(), lr=learning_rate)
-    if optim == 'adam':
+    if optimizer == 'adam':
         return optim.Adam(rnn.parameters(), lr=learning_rate)
 
 optimizer = get_optimizer(optimizer_type)
