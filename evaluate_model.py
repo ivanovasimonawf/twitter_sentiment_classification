@@ -4,11 +4,11 @@ from utils.string_utils import category_from_output, unicode_to_ascii
 # from train import batch_size, max_length_of_seq, glove_vector_size, all_categories
 from generate_data import generate_batches
 
-model_path = 'models/model2018-04-30 14:25:14.306869.pt'
-file_not_correct_predicted = 'data/wrong_predicted.txt'
+model_path = 'models/model2018-05-07 15:31:16.924785reduced.pt'
+file_not_correct_predicted = 'data/wrong_predicted_model2018-05-07 15:31:16.924785reduced.pt'
 
 rnn_model = torch.load(model_path)
-batch_size = 128
+batch_size = 32
 max_length_of_seq = 17
 glove_vector_size = 300
 
@@ -36,7 +36,7 @@ for test_batch in data_generator:
     output = evaluate(rnn_model, batch_tweet_tensor, sizes, batch_size)
     predictions, predictions_ind = category_from_output(output, all_categories)
     for i in range(len(predictions_ind)):
-        if predictions_ind[i] == labels_ind[i]:
+        if predictions[i] == labels[i]:
             correct_predicted += 1
         else:
             wrong_predicted += 1
@@ -45,7 +45,7 @@ for test_batch in data_generator:
             else:
                 positive += 1
             try:
-                file.write(str(labels_ind[i]) + '\t' + str(predictions_ind[i]) + '\t' + unicode_to_ascii(sequences[i]) + '\n')
+                file.write(str(labels[i]) + '\t' + str(predictions[i]) + '\t' + unicode_to_ascii(sequences[i]) + '\n')
             except UnicodeEncodeError:
                 print(sequences[i])
 
