@@ -11,13 +11,13 @@ from utils.string_utils import category_from_output
 
 model_path = "models/model"
 
-epochs = 100
+epochs = 50
 n_hidden = 128
 output_size = 2
 batch_size = 32
 dropout_before_softmax = 0.1
 stacked_rnn = 2
-learning_rate = 0.1
+learning_rate = 0.05
 max_length_of_seq = 17
 glove_vector_size = 300  # can be 50, 100, 200, 300
 optimizer_type = 'sgd'
@@ -137,7 +137,7 @@ for epoch in range(epochs):
                 correct_predicted_test += 1
         epoch_loss_test += loss
         all_losses_test.append(loss)
-    epoch_losses_test.append(epoch_loss_test)
+    epoch_losses_test.append(float(epoch_loss_test)/number_of_batches)
     accuracy_test.append(float(correct_predicted_test)/(number_of_batches*batch_size))
 
     print("Percentage: %.5f" % float("{0:.5f}".format(float(correct_predicted_test)/(number_of_batches*batch_size))))
@@ -158,4 +158,4 @@ plt.plot(accuracy_train)
 plt.legend(["test", "train"], loc="upper left")
 plt.title(title)
 plt.show()
-torch.save(rnn, model_path + str(datetime.datetime.now()) + ".pt")
+torch.save(rnn, model_path + str(datetime.datetime.now()) + option + ".pt")
