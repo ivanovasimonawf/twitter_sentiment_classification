@@ -4,8 +4,8 @@ from twitter_corpus import TwitterSentimentCorpus
 
 option = 'full'
 
-train_file = 'data/punctuation/train_kaggle_' + option + '.tsv'
-test_file =  'data/punctuation/test_kaggle_' + option + '.tsv'
+train_file = 'data/kaggle_data/train_kaggle_' + option + '.tsv'
+test_file =  'data/kaggle_data/test_kaggle_' + option + '.tsv'
 glove_file = 'glove/glove.6B.300d.txt'
 
 all_categories = []
