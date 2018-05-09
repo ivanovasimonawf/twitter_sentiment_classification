@@ -9,14 +9,11 @@ import operator
 # original train data file
 data_file = '../data/kaggle_data/train.tsv'
 # path where to save separated train and test without preprocessing (except user, link, hashtag)
-test_file = '../data/punctuation/test_kaggle_full.tsv'
-train_file = '../data/punctuation/train_kaggle_full.tsv'
-# path where to save tweets with words that we have glove vectors for
-test_file_glove = '../data/punctuation/test_kaggle_glove.tsv'
-train_file_glove = '../data/punctuation/train_kaggle_glove.tsv'
+test_file = '../data/kaggle_data/test_kaggle_full.tsv'
+train_file = '../data/kaggle_data/train_kaggle_full.tsv'
 # path where to save tweets with removed one-time words
-test_file_reduced = '../data/punctuation/test_kaggle_reduced.tsv'
-train_file_reduced = '../data/punctuation/train_kaggle_reduced.tsv'
+test_file_reduced = '../data/kaggle_data/test_kaggle_reduced.tsv'
+train_file_reduced = '../data/kaggle_data/train_kaggle_reduced.tsv'
 glove_file = '../glove/glove.6B.300d.txt'
 
 glove_words = []
@@ -60,7 +57,49 @@ def avg_words(data):
         if len(line) != 2:
             continue
         number_of_words += len(line[1].split(' '))
-    return float(number_of_words)/len(data)
+    return float(number_of_words) / len(data)
+
+
+def create_word2vec(data):
+    for pair in data:
+        if len(pair) != 2:
+            continue
+        for word in pair[1].split():
+            if word.strip() not in word2count:
+                word2count[word.strip()] = 1
+            else:
+                word2count[word.strip()] += 1
+
+
+def preprocess_data(data, remove_glove=True, remove_one_time=True, remove_repeatable_punc=True):
+    new_pairs = []
+    glove_pairs = []
+    for pair in data:
+        if len(pair) != 2:
+            continue
+        sentence = pair[1]
+        if remove_glove:
+            sentence = get_glove_words_only(sentence)
+        if is_len_zero(sentence):
+            continue
+        else:
+            glove_pairs.append([pair[0], sentence])
+        if remove_one_time:
+            sentence = extract_one_time_words(sentence)
+        if is_len_zero(sentence):
+            continue
+        if remove_repeatable_punc:
+            sentence = extract_punctuation(sentence)
+        if not is_len_zero(sentence):
+            new_pairs.append([pair[0], sentence])
+    return new_pairs, glove_pairs
+
+
+def is_len_zero(sentence):
+    if len(sentence.split()) == 0:
+        return True
+    else:
+        return False
 
 
 # leave only glove-available words in a sentence
@@ -68,25 +107,8 @@ def get_glove_words_only(sentence):
     new_sentence = ""
     for word in sentence.split():
         if word.strip() in glove_words:
-           new_sentence += word + ' '
-        if word.strip() not in word2count:
-            word2count[word.strip()] = 1
-        else:
-            word2count[word.strip()] += 1
+            new_sentence += word.strip() + ' '
     return new_sentence
-
-
-# extract sentences that will have 0 length because there are no glove vectors available for the words
-# returns label, tweet pairs with length different of 0
-def extract_glove(data):
-    new_pairs = []
-    for pair in data:
-        if len(pair) != 2:
-            continue
-        extracted_sentence = get_glove_words_only(pair[1])
-        if len(extracted_sentence.split()) != 0:
-            new_pairs.append([pair[0], extracted_sentence])
-    return new_pairs
 
 
 # leave words in a sentence repeated more than once in whole dataset
@@ -96,17 +118,6 @@ def extract_one_time_words(sentence):
         if word2count[word.strip()] != 1:
             new_sentence += word + ' '
     return new_sentence
-
-
-# extract sentences that will have 0 length because we remove words that are only repeated once
-# returns label, tweet pairs with length different of 0
-def extract_sentences(data):
-    new_pairs = []
-    for pair in data:
-        extracted_sentence = extract_one_time_words(pair[1])
-        if len(extracted_sentence.split()) != 0:
-            new_pairs.append([pair[0], extracted_sentence])
-    return new_pairs
 
 
 def extract_punctuation(sentence):
@@ -125,17 +136,8 @@ def extract_punctuation(sentence):
     return new_sentence
 
 
-def extract_punctuations(data):
-    new_pairs = []
-    for pair in data:
-        extracted_sentence = extract_punctuation(pair[1])
-        if len(extracted_sentence.split()) != 0:
-            new_pairs.append([pair[0], extracted_sentence])
-    return new_pairs
-
-
 # prints first print_first words with most repetitions
-def print_repetitions(print_first = 100):
+def print_repetitions(print_first=100):
     sorted_words = sorted(word2count.items(), key=operator.itemgetter(1), reverse=True)
     print(sorted_words[:print_first])
 
@@ -144,21 +146,21 @@ lines = open(data_file, encoding='ISO-8859-1').read().strip().split('\n')
 sentiment_tweet_pairs = [[tokenize_tweet(normalize_string(s)) for s in l.split('\t')][-2:] for l in lines][1:]
 
 train_data, test_data = split_data(sentiment_tweet_pairs)
-train_data_glove, test_data_glove = extract_glove(train_data), extract_glove(test_data)
-save_split_data(train_data_glove, train_file_glove)
-save_split_data(test_data_glove, test_file_glove)
-train_data_glove, test_data_glove = extract_punctuations(extract_sentences(train_data_glove)), extract_punctuations(extract_sentences(test_data_glove))
+create_word2vec(train_data)
+create_word2vec(test_data)
+train_data_preprocessed, train_glove_only = preprocess_data(train_data)
+test_data_preprocessed, test_glove_only = preprocess_data(test_data)
 print("Train size full: ", len(train_data))
 print("Test size full: ", len(test_data))
-print("Train size reduced: ", len(train_data_glove))
-print("Test size reduced: ", len(test_data_glove))
+print("Train size reduced: ", len(train_data_preprocessed))
+print("Test size reduced: ", len(test_data_preprocessed))
 print("Average word count train: ", avg_words(train_data))
 print("Average word count test: ", avg_words(test_data))
 
-save_split_data(train_data, train_file)
-save_split_data(test_data, test_file)
+save_split_data(train_glove_only, train_file)
+save_split_data(test_glove_only, test_file)
 
-save_split_data(train_data_glove, train_file_reduced)
-save_split_data(test_data_glove, test_file_reduced)
+save_split_data(train_data_preprocessed, train_file_reduced)
+save_split_data(test_data_preprocessed, test_file_reduced)
 
 print_repetitions()
